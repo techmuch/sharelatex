@@ -1,0 +1,65 @@
+sharelatex_mongodb_data:
+  image: mongo
+  entrypoint: /bin/true
+  volumes:
+    - ./mongo_data:/data/db
+
+sharelatex_mongodb:
+  restart: always
+  image: mongo
+  volumes_from:
+    - sharelatex_mongodb_data
+
+sharelatex_redis_data:
+  image: redis
+  entrypoint: /bin/true
+  volumes:
+    - ./redis_data:/data
+
+sharelatex_redis:
+  restart: always
+  image: redis
+  command: redis-server --appendonly yes
+  volumes_from:
+    - sharelatex_redis_data
+
+sharelatex_data:
+  image: sharelatex/sharelatex
+  entrypoint: /bin/true
+  volumes:
+    - ./data:/var/lib/sharelatex
+
+sharelatex:
+  restart: always
+  image: sharelatex/sharelatex
+  volumes_from:
+    - sharelatex_data
+  links:
+    - sharelatex_mongodb:sharelatex_mongodb
+    - sharelatex_redis:sharelatex_redis
+  environment:
+    # Where your instance is publically available.
+    SHARELATEX_SITE_URL: http://example.com
+
+    # The email address where users can reach the person who runs the site.
+    SHARELATEX_ADMIN_EMAIL: david.d.fullmer@gmail.com
+
+    # The name to display when talking about the running app. Defaults to 'ShareLaTex (Community Edition)'.
+    SHARELATEX_APP_NAME: David's Personal Server
+
+    # The URL of the Mongo database to use
+    SHARELATEX_MONGO_URL: mongodb://sharelatex_mongodb/sharelatex
+
+    # The host name of the Redis instance to use
+    SHARELATEX_REDIS_HOST: sharelatex_redis
+
+    # The port of the Redis instance to use
+    SHARELATEX_REDIS_PORT: 6379
+
+    # The password to use when connecting to Redis (if applicable)
+    #SHARELATEX_REDIS_PASS:
+
+    # Set to non-zero to use secure cookie. Only use this if your ShareLaTeX instance is running behind a reverse proxy with SSL configured.
+    #SHARELATEX_SECURE_COOKIE:
+  ports:
+    - 8000:80
